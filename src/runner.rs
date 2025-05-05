@@ -7,12 +7,9 @@ use crate::Error;
 
 use acvm::FieldElement;
 use bn254_blackbox_solver::Bn254BlackBoxSolver;
-use nargo::{
-    errors::try_to_diagnose_runtime_error,
-    ops::{execute_program, DefaultForeignCallExecutor},
-    NargoError,
-};
-use nargo_toml::{get_package_manifest, resolve_workspace_from_toml, PackageSelection};
+use nargo::foreign_calls::DefaultForeignCallBuilder;
+use nargo::{NargoError, errors::try_to_diagnose_runtime_error, ops::execute_program};
+use nargo_toml::{PackageSelection, get_package_manifest, resolve_workspace_from_toml};
 use noirc_abi::input_parser::InputValue;
 use noirc_artifacts::{debug::DebugArtifact, program::ProgramArtifact};
 use noirc_driver::{CompiledProgram, NOIR_ARTIFACT_VERSION_STRING};
@@ -102,8 +99,8 @@ impl NoirRunner {
         let solved_witness_stack = execute_program(
             &program.program,
             program.abi.encode(&input_map, None).map_err(Error::Abi)?,
-            &Bn254BlackBoxSolver,
-            &mut DefaultForeignCallExecutor::new(true, None, Some(self.program_dir.clone()), None),
+            &Bn254BlackBoxSolver(false),
+            &mut DefaultForeignCallBuilder::default().build(),
         );
 
         let solved_witness_stack = solved_witness_stack
